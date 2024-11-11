@@ -1,0 +1,38 @@
+{
+  "manifest_version": 3,
+  "name": "Deal Scout for Gmail: Promo Tab Deal Finder",
+  "version": "1.0",
+  "description": "Searches your Gmail Promotions Tab for deals.",
+  "permissions": [
+    "identity",
+    "activeTab",
+    "storage",
+    "scripting",
+	"tabs"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "oauth2": {
+    "client_id": "540727094785-925n2vi1fc21gv10ediikqjllkijc86k.apps.googleusercontent.com",
+    "scopes": [
+      "https://www.googleapis.com/auth/gmail.readonly",
+      "https://www.googleapis.com/auth/userinfo.email"
+    ]
+  },
+  "icons": {
+     "128": "dealscouticon128.png",
+     "48": "dealscouticon48.png",
+     "32": "dealscouticon32.png",
+     "16": "dealscouticon16.png"
+   },
+   "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"]
+    }
+  ]
+}
