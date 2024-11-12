@@ -1,0 +1,16 @@
+Download and Extract:
+Download the ZIP file and extract it to a folder.
+
+Open Chrome Extensions:
+Go to chrome://extensions/ in Chrome.
+
+Enable Developer Mode:
+Toggle "Developer mode" on in the top-right corner.
+
+Load the Extension:
+If the extension is a CRX file, drag it to the Chrome extensions page.
+
+If it's a folder of files, click "Load unpacked" in the upper left, then select the folder where you extracted the ZIP file.
+
+Optional:
+Pin the extension by clicking the puzzle icon and the pin next to the extension name.
