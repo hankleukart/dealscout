@@ -1,5 +1,16 @@
-Deal Scout for Gmail is a Chrome extension that downloads your Promotional emails from Gmail and shows you the best deals and coupon codes.
+Download and Extract:
+Download the ZIP file and extract it to a folder.
 
-If you open the extension while in Gmail, it will show you your best deals and coupon codes. If you open the extension while on any other domain/store's website, it will show you coupons for that store. In addition, a red badge will appear on the extension icon if your Gmail has promotions for the current domain/store's website. Deals with coupon codes are shown first, and all deals are sorted by discount size.
+Open Chrome Extensions:
+Go to chrome://extensions/ in Chrome.
 
-The extension downloads up to the last month of Promo emails, up to 150. It stores a cache of their data, which it updates as necessary every six hours. Codes and discount information are extracted from plain text versions of the Promo emails using regular expressions. Links to shop the sale at extracted from the HTML version of the emails.
+Enable Developer Mode:
+Toggle "Developer mode" on in the top-right corner.
+
+Load the Extension:
+If the extension is a CRX file, drag it to the Chrome extensions page.
+
+If it's a folder of files, click "Load unpacked" in the upper left, then select the folder where you extracted the ZIP file.
+
+Optional:
+Pin the extension by clicking the puzzle icon and the pin next to the extension name.

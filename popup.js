@@ -1,4 +1,4 @@
-const maxResults = 150;
+const maxResults = 200;
 
 document.addEventListener('DOMContentLoaded', async function() {
   const cache = await updateCacheIfNeeded();
@@ -94,12 +94,13 @@ async function getToken() {
 
 async function fetchPromoMessages(lastUpdated) {
     const today = new Date();
-    const oneMonthAgo = new Date(today);
+	const twoWeeksAgo = Date.now() - 14 * 24 * 60 * 60 * 1000;
+    const oneMonthAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
+
 	let formattedDate;
-    oneMonthAgo.setMonth(today.getMonth() - 1);		
 
 	if (!lastUpdated) {
-	    formattedDate = Math.floor(oneMonthAgo / 1000); // converts from millisecond timestamp to seconds
+	    formattedDate = Math.floor(twoWeeksAgo / 1000); // converts from millisecond timestamp to seconds
 	}
 	else {
 	    formattedDate = Math.floor(lastUpdated / 1000); // converts from millisecond timestamp to seconds
@@ -157,7 +158,7 @@ async function fetchPromoMessages(lastUpdated) {
       await new Promise(resolve => setTimeout(resolve, 5)); // Rate limiting
     }
 
-    const filteredMessages = messageDetails.filter(msg => msg && msg.date && new Date(msg.date) >= oneMonthAgo);
+    const filteredMessages = messageDetails.filter(msg => msg && msg.date && new Date(msg.date) >= twoWeeksAgo);
     document.getElementById('message').textContent = '';
     document.getElementById('progress-indicator').classList.add('hidden');
     return filteredMessages;
@@ -203,10 +204,12 @@ async function fetchMessage(token, messageId) {
         const senderDomain = getDomain(fromHeader.match(/@([\w.-]+)/)?.[1]);
 
         // Retrieve and log plain text body
-        const html_body = getBodyFromParts(message.payload?.parts || []);
+		const html_body = getBodyFromEmail(message.payload);
         const text_body = convertHtmlToText(html_body);
 		
         const { coupon, discount, deallink } = extractDealInfo(html_body, text_body);
+        console.log(`coupon: ${coupon} discount: ${discount} deallink: ${deallink} `);
+        console.log(`html_body: ${html_body} text_body: ${text_body}`);
 
         return {
             id: message.id,
@@ -307,16 +310,49 @@ async function updateCacheIfNeeded() {
   }
 }
 
-// Function to get plain text from nested message parts
+function getBodyFromEmail(payload) {
+  // Check if `parts` is available; if not, look directly in `payload`
+  if (!payload.parts) {
+    console.log("No `parts` field found. Checking the payload directly.");
+    if (payload.mimeType === 'text/html' && payload.body?.data) {
+      console.log("HTML body found directly in payload.");
+      return decodeBase64(payload.body.data);
+    }
+  } else {
+    // If `parts` exists, use the recursive function to search for the HTML body
+    return getBodyFromParts(payload.parts);
+  }
+
+  console.warn("No HTML body found in the email payload.");
+  return null;
+}
+
 function getBodyFromParts(parts) {
   for (const part of parts) {
+    console.log("Checking part with MIME type:", part.mimeType);
+    
     if (part.mimeType === 'text/html' && part.body?.data) {
+      console.log("HTML body found in part:", part);
       return decodeBase64(part.body.data);
     } else if (part.parts) {
-      return getBodyFromParts(part.parts);
+      console.log("Nested parts found, recursing...");
+      const result = getBodyFromParts(part.parts);
+      if (result) return result;
     }
   }
+
+  console.warn("No HTML body found in the parts.");
   return null;
+}
+
+// Helper function for decoding Base64 data
+function decodeBase64(encoded) {
+  return decodeURIComponent(
+    atob(encoded.replace(/-/g, "+").replace(/_/g, "/"))
+      .split("")
+      .map(c => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+      .join("")
+  );
 }
 
 function convertHtmlToText(html) {
@@ -343,16 +379,6 @@ function convertHtmlToText(html) {
     return text.replace(/\s+/g, ' ').trim();
 }
 
-// Helper function to decode base64
-function decodeBase64(data) {
-    try {
-        const decodedData = atob(data.replace(/-/g, '+').replace(/_/g, '/'));
-        return decodedData;
-    } catch (error) {
-        console.error("Failed to decode base64 data:", error);
-        return null;
-    }
-}
 function displayMessages(messages) {
   const uniqueMessages = [];
   const senderLastSeen = {};
@@ -399,7 +425,7 @@ function displayMessage(message, deallist) {
   const listItem = document.createElement('li');
   listItem.className = `message-tile ${message.coupon ? '' : 'no-coupon'}`;
   listItem.style.cursor = 'pointer';
-  listItem.title = `Shop Now`;
+  listItem.title = `Copy code + shop sale`;
 
   const formattedDate = new Date(message.date).toLocaleDateString('en-US', {
     month: 'short', day: 'numeric', year: 'numeric'
@@ -411,13 +437,25 @@ function displayMessage(message, deallist) {
   listItem.innerHTML = `
     ${deallist === 'domain-deals' ? `${formattedDate}<br>` : ''}
     <b>${message.from}</b><br>
-	<span style="color: green;">${message.discount || ''}</span><br>
-	${message.coupon ? `${message.coupon}<br>` : ''}
+    <span style="color: green;">${message.discount || ''}</span><br>
+    ${message.coupon ? `${message.coupon}<br>` : ''}
     <span class="email-link" title="View Email"><div class="email-icon"></div></span>
   `;
 
-  listItem.addEventListener('click', () => window.open(url, '_blank'));
+  listItem.addEventListener('click', async () => {
+    if (message.coupon) {
+      try {
+        await navigator.clipboard.writeText(message.coupon);
+        console.log(`Coupon code ${message.coupon} copied to clipboard.`);
+      } catch (error) {
+        console.error('Failed to copy coupon code:', error);
+      }
+    }
 
+    // Now open the link after copying is complete
+    window.open(url, '_blank');
+  });
+  
   listItem.querySelector('.email-link').addEventListener('click', (event) => {
     event.stopPropagation();
     window.open(emailUrl, '_blank');
